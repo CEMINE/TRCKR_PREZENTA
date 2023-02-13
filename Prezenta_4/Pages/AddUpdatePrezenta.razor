@@ -1,0 +1,133 @@
+﻿@page "/addupdateprezenta"
+@using Services
+@using Data
+@using System.Diagnostics
+@using System.Linq
+@inject IMaterieService _materieService
+@inject IPrezentaMaterie _prezentaService
+@inject NavigationManager navigationManager
+
+
+<h3 class="mb-3">Adauga prezenta</h3>
+<hr />
+
+<select class="form-control w-auto" @bind="selectedMaterieId" >
+    <option>Selecteaza materie...</option>
+    @if (materieList != null)
+    {
+        @foreach (var mat in materieList)
+        {
+                                                <option value="@mat.Id"> @mat.Name </option>        
+        }  
+    }
+</select>
+<select class="form-control w-auto mt-3" @bind="@tipSMaterie" @onfocusout="@ValChanged">
+    <option>Selecteaza tipul prezentei...</option>
+    <option value="1">Seminar</option>
+    <option value="2">Curs</option>
+</select>
+<button class="btn btn-sm btn-success mt-3" @onclick="AddPrezenta">Adauga</button>
+
+
+
+@code {
+    private bool prezentaStatus = false;
+    private bool hidePrezenta = true;
+    private IEnumerable<Materie> materieList;
+    private List<string> matNameList = new List<string>();
+
+    public string selectedMaterieId { get; set; }
+    public bool tipMaterie;
+    public string tipSMaterie;
+    public string materieName;
+    protected override async Task OnInitializedAsync()
+    {
+        materieList = await _materieService.GetMateriiAsync();
+
+        Debug.WriteLine("Initializare completa");
+        matNameList.Add("");
+        foreach (var item in materieList)
+        {
+            matNameList.Add(item.Name.ToString());
+            Debug.WriteLine(item.Name);
+        }
+    }
+
+    public void ValChanged()
+    {
+
+        if (tipSMaterie == "1")
+        {
+            tipMaterie = false;
+        }
+        if (tipSMaterie == "2")
+        {
+            tipMaterie = true;
+        }
+        Debug.WriteLine($"{tipMaterie} + id : {selectedMaterieId}");
+        /*
+        Debug.WriteLine("merge" + selectedMaterieId);
+        if (!selectedMaterieId.Contains("Selecteaza"))
+            {          
+            Debug.WriteLine("Nume materie: " + matNameList[Convert.ToInt32(selectedMaterieId)]);
+        }
+        */
+        //await App.Current.MainPage.DisplayAlert($"Ai selectat materia cu id {selectedMaterieId}", "selection changed", "ok");
+
+    }
+
+    public async void AddPrezenta()
+    {
+        var prezenta = new PrezentaMaterie();
+        if (prezenta.MaterieId != null && prezenta.isCurs != null)
+        {
+            prezenta.MaterieId = Convert.ToInt32(selectedMaterieId);
+            prezenta.isCurs = tipMaterie;
+            prezenta.Date = DateTime.Now.Date;
+        }
+
+
+        var respone = await _prezentaService.AddUpdatePrezentaAsync(prezenta);
+        await App.Current.MainPage.DisplayAlert("Salvat", "Prezenta a fost salvata cu succes!", "Ok");
+        Debug.WriteLine($"Prezenta a fost adaugata pentru materia cu id {selectedMaterieId}, de tip {tipMaterie} la data de {prezenta.Date}");
+        /*
+    if (respone)
+    {
+        if (materieId == 0)
+        {
+            await App.Current.MainPage.DisplayAlert("Saved", "Save Succes", "Ok");
+        }
+        else
+        {
+            await App.Current.MainPage.DisplayAlert("Updated", "Update succes", "ok");
+        }
+        navigationManager.NavigateTo("prodList");
+    }
+    else
+    {
+        await App.Current.MainPage.DisplayAlert("Saved", "Saved failed", "ok");
+    }
+    */
+    }
+        /*
+    public void Test()
+    {
+    prezentaStatus = true;
+    hidePrezenta = false;
+    if (selectedMaterieTip == "1")
+    {
+    //seminar
+    }
+    if (selectedMaterieTip == "2")
+    {
+    //curs
+
+    }
+    if (selectedMaterieTip == "3")
+    {
+    //toate
+    }
+    }
+    */
+
+}

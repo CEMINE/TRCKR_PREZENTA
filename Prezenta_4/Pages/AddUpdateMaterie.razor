@@ -1,0 +1,81 @@
+﻿@page "/addupdatematerie"
+@page "/updatematerie/{MaterieId:int}"
+@using Services
+@using Data
+@inject IMaterieService _materieService
+@inject NavigationManager navigationManager
+
+<h3>AddUpdateMaterie</h3>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="mb-3">
+            <label class="form-label">Product Id:</label>
+            <input type="text" @bind="materieId" class="form-control" placeholder="Materie ID" readonly/>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Product Name:</label>
+            <input type="text" @bind="materieName" class="form-control" placeholder="Materie name"/>       
+        <button type="submit" class="btn btn-sm btn-success mt-3" @onclick="AddMaterieInfo">Trimite</button>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public int MaterieId { get; set; }
+
+    private int materieId = 0;
+    private string materieName = "";
+
+    private IEnumerable<Materie> materieList;
+
+    protected async override void OnInitialized()
+    {
+        base.OnInitialized();
+        materieId = MaterieId;
+        materieList = await _materieService.GetMateriiAsync();
+        if (MaterieId > 0)
+        {
+            var response = await _materieService.GetMaterieAsync(materieId);
+            materieName = response.Name;
+            this.StateHasChanged();
+        }
+
+    }
+
+    public async void AddMaterieInfo()
+    {
+        var materie = new Materie();
+        materie.Id = materieId;
+        materie.Name = materieName;
+
+        foreach (var item in materieList)
+        {
+            if (item.Name.ToLower() == materieName.ToLower())
+            {
+                await App.Current.MainPage.DisplayAlert("Failed", "Exista deja o materie cu acest nume", "ok");
+                return;
+            }
+
+        }
+
+        var respone = await _materieService.AddUpdateMaterieAsync(materie);
+        if (respone)
+        {
+            if (materieId == 0)
+            {
+                await App.Current.MainPage.DisplayAlert("Saved", "Save Succes", "Ok");
+            }
+            else
+            {
+                await App.Current.MainPage.DisplayAlert("Updated", "Update succes", "ok");
+            }
+            navigationManager.NavigateTo("materielist");
+        }
+        else
+        {
+            await App.Current.MainPage.DisplayAlert("Saved", "Saved failed", "ok");
+        }
+    }
+}

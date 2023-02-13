@@ -1,0 +1,231 @@
+﻿@page "/prezente2"
+@using Services
+@using Data
+@using System.Diagnostics
+@using System.Linq
+@inject IMaterieService _materieService
+@inject IPrezentaMaterie _prezentaService
+@inject NavigationManager navigationManager
+
+
+
+<h3 class="mb-3">Prezente</h3>
+<hr />
+
+@if (materieList == null)
+{
+		<p><em>Loading...</em></p>
+}
+else
+{
+		<select class="form-control w-auto" @bind="selectedMaterieId">
+			<option>Selecteaza materie...</option>
+		@if (materieList != null)
+		{
+			@foreach (var mat in materieList)
+			{
+							<option value="@mat.Id"> @mat.Name </option>
+			}
+		}
+		</select>
+
+		<select class="form-control w-auto mt-3" @bind ="tipPrezenta" @onfocusout="@Test">
+			<option>Selecteaza tipul prezentei</option>
+			<option value="1">Seminar</option>
+			<option value="2">Curs</option>
+			<option value="3">Toate</option>
+		</select>
+
+	@if (prezentaList != null)
+	{
+
+
+						<table class="table table-striped">
+							<thead>
+								<tr>
+									<th>Id</th>
+									<th>Nume materie</th>
+									<th>Tip prezenta</th>
+									<th>Data</th>
+
+								</tr>
+							</thead>
+							<tbody>
+				@foreach (var prezenta in prezentaList)
+				{
+					if (prezenta.isCurs)
+					{
+
+						fatadaTipPrezenta = "Curs";
+						//totalPrezenteCurs++;
+
+
+					}
+					if (!prezenta.isCurs)
+					{
+						fatadaTipPrezenta = "Seminar";
+						//totalPrezenteSeminar++;
+
+					}
+											<tr>
+												<td>@prezenta.Id</td>
+												<td>
+							@foreach (var item in materieList)
+							{
+								@if (item.Id == prezenta.MaterieId)
+								{
+									@item.Name.ToString()
+									;
+									Debug.WriteLine($"test nume materie: {item.Name.ToString()}");
+									break;
+								}
+							}
+												</td>
+												<td>@fatadaTipPrezenta</td>
+												<td>@prezenta.Date.ToShortDateString()</td>
+												<td>
+												<button class="btn btn-danger" @onclick=@(()=> DeletePrezenta(prezenta.Id))>Sterge</button>	
+												</td>
+											</tr>
+				}
+							</tbody>
+						</table>
+						<label>Total prezente seminar: @totalPrezenteSeminar</label>
+						<br />
+						<label>Total prezente curs: @totalPrezenteCurs</label>
+						<br />
+						<button class="btn btn-primary mt-3" @onclick="AddNewProduct">Adauga prezenta</button>
+	}
+}
+
+
+@code {
+
+	private IEnumerable<Materie> materieList;
+	private IEnumerable<PrezentaMaterie> prezentaList;
+	private string selectedMaterieId;
+	private bool isHidden = true;
+	public List<string> matNameList = new List<string>();
+	public string fatadaTipPrezenta;
+	public string tipPrezenta;
+	public bool tipbPrezenta;
+	public int totalPrezenteSeminar = 0;
+	public int totalPrezenteCurs = 0;
+	string numeMat;
+	protected override async Task OnInitializedAsync()
+	{
+		//prezentaList = await _prezentaService.GetPrezenteCursAsync();
+
+
+		materieList = await _materieService.GetMateriiAsync();
+		matNameList.Add("None");
+
+		foreach (var item in materieList)
+		{
+			matNameList.Add(item.Name.ToString());
+			Debug.WriteLine(item.Name);
+		}
+
+
+
+	}
+
+	public void Caca()
+	{
+		totalPrezenteCurs = 0;
+		totalPrezenteSeminar = 0;
+		isHidden = false;
+	}
+
+	public void UpdateProduct(Materie materie)
+	{
+		navigationManager.NavigateTo($"updatematerie/{materie.Id}");
+	}
+	public async void DeleteProduct(Materie materie)
+	{
+		await _materieService.DeleteMaterieAsync(materie.Id);
+		materieList = await _materieService.GetMateriiAsync();
+		this.StateHasChanged();
+	}
+
+	public void AddNewProduct()
+	{
+		navigationManager.NavigateTo("addupdateprezenta");
+	}
+
+	public async void Test()
+	{
+		totalPrezenteCurs = 0;
+		totalPrezenteSeminar = 0;
+		if (tipPrezenta == "1")
+			tipbPrezenta = false;
+
+		if (tipPrezenta == "2")
+			tipbPrezenta = true;
+
+		if (tipPrezenta == "1" || tipPrezenta == "2")
+		{
+
+		}
+
+		if (tipPrezenta == "3")
+		{
+			prezentaList = await _prezentaService.GetAllPrezenteAsync(Convert.ToInt32(selectedMaterieId));
+		}
+		else
+		{
+			prezentaList = await _prezentaService.GetPrezentaCursAsync(tipbPrezenta, Convert.ToInt32(selectedMaterieId));
+		}
+
+		foreach (var item in prezentaList)
+		{
+			if (item.MaterieId == Convert.ToInt32(selectedMaterieId) && item.isCurs == true)
+			{
+				totalPrezenteCurs++;
+			}
+			if (item.MaterieId == Convert.ToInt32(selectedMaterieId) && item.isCurs == false)
+			{
+				totalPrezenteSeminar++;
+			}
+		}
+		var test = _materieService.GetMaterieAsync(Convert.ToInt32(selectedMaterieId));
+		numeMat = test.ToString();
+		Debug.WriteLine($"Nume materie : {numeMat}");
+		Debug.WriteLine($"id materie: {selectedMaterieId}");
+
+
+		Debug.WriteLine($"Tip prezenta: {tipbPrezenta}");
+		//Task.Delay(2000).Wait();
+		if (prezentaList != null)
+		{
+			Debug.WriteLine("prezenta list nu e null");
+			foreach (var item in prezentaList)
+			{
+				Debug.WriteLine(item.ToString());
+			}
+		}
+		else
+		{
+			Debug.WriteLine("prezenta list e null");
+		}
+		this.StateHasChanged();
+
+
+	}
+
+	public async void DeletePrezenta(int prezentaId)
+	{
+		await _prezentaService.DeletePrezentaAsync(prezentaId);
+		if (tipPrezenta == "3")
+		{
+			prezentaList = await _prezentaService.GetAllPrezenteAsync(Convert.ToInt32(selectedMaterieId));
+		}
+		else
+		{
+			prezentaList = await _prezentaService.GetPrezentaCursAsync(tipbPrezenta, Convert.ToInt32(selectedMaterieId));
+		}
+		this.StateHasChanged();
+	}
+
+
+}

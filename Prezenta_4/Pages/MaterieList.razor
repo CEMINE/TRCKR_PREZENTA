@@ -1,0 +1,73 @@
+﻿@page "/materielist"
+@using Services
+@using Data
+@inject IMaterieService _materieService
+@inject NavigationManager navigationManager
+
+<h3 class="mb-3">Lista materii</h3>
+<hr />
+
+@if (materieList == null)
+{
+				<p><em>Loading...</em></p>
+}
+else
+{
+			<button class="btn btn-primary m-auto" @onclick="AddNewProduct">Adauga materie</button>
+			<button class="btn btn-primary" @onclick="Maca">Adauga prezenta</button>
+				<table class="table table-striped">
+					<thead>
+						<tr>
+							<th>Id</th>
+							<th>Name</th>
+
+						</tr>
+					</thead>
+					<tbody>
+			@foreach (var materie in materieList)
+			{
+										<tr>
+											<td>@materie.Id</td>
+											<td>@materie.Name</td>
+											<td>
+												<button class="btn btn-info" @onclick=@(()=> UpdateProduct(materie))>Edit</button>
+												<button class="btn btn-danger" @onclick=@(()=> DeleteProduct(materie))>Sterge</button>
+											</td>
+										</tr>
+			}
+					</tbody>
+				</table>
+}
+
+
+@code {
+	private IEnumerable<Materie> materieList;
+	protected override async Task OnInitializedAsync()
+	{
+		materieList = await _materieService.GetMateriiAsync();
+
+	}
+
+	public void UpdateProduct(Materie materie)
+	{
+		navigationManager.NavigateTo($"updatematerie/{materie.Id}");
+	}
+	public async void DeleteProduct(Materie materie)
+	{
+		await _materieService.DeleteMaterieAsync(materie.Id);
+		materieList = await _materieService.GetMateriiAsync();
+		this.StateHasChanged();
+	}
+
+	public void AddNewProduct()
+	{
+		navigationManager.NavigateTo("addupdatematerie");
+	}
+
+	public void Maca()
+	{
+		navigationManager.NavigateTo("addupdateprezenta");
+	}
+
+
+}
